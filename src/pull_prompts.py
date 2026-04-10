@@ -13,14 +13,13 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from langchain import hub
-from utils import save_yaml, check_env_vars, print_section_header
+from langchain_classic import hub
+from .utils import save_yaml, check_env_vars, print_section_header
 
 load_dotenv()
 
 
-def pull_prompts_from_langsmith():
-    ...
+def pull_prompts_from_langsmith(): ...
 
 
 def main():

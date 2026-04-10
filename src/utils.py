@@ -2,17 +2,18 @@
 Funções auxiliares para o projeto de otimização de prompts.
 """
 
-import os
-import yaml
 import json
-from typing import Dict, Any, Optional
+import os
 from pathlib import Path
+from typing import Any
+
+import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-def load_yaml(file_path: str) -> Optional[Dict[str, Any]]:
+def load_yaml(file_path: str) -> dict[str, Any] | None:
     """
     Carrega arquivo YAML.
 
@@ -23,7 +24,7 @@ def load_yaml(file_path: str) -> Optional[Dict[str, Any]]:
         Dicionário com conteúdo do YAML ou None se erro
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         return data
     except FileNotFoundError:
@@ -37,7 +38,7 @@ def load_yaml(file_path: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def save_yaml(data: Dict[str, Any], file_path: str) -> bool:
+def save_yaml(data: dict[str, Any], file_path: str) -> bool:
     """
     Salva dados em arquivo YAML.
 
@@ -52,7 +53,7 @@ def save_yaml(data: Dict[str, Any], file_path: str) -> bool:
         output_file = Path(file_path)
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_file, 'w', encoding='utf-8') as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             yaml.dump(data, f, allow_unicode=True, sort_keys=False, indent=2)
 
         return True
@@ -116,7 +117,7 @@ def print_section_header(title: str, char: str = "=", width: int = 50):
     print(char * width + "\n")
 
 
-def validate_prompt_structure(prompt_data: Dict[str, Any]) -> tuple[bool, list]:
+def validate_prompt_structure(prompt_data: dict[str, Any]) -> tuple[bool, list]:
     """
     Valida estrutura básica de um prompt.
 
@@ -128,26 +129,28 @@ def validate_prompt_structure(prompt_data: Dict[str, Any]) -> tuple[bool, list]:
     """
     errors = []
 
-    required_fields = ['description', 'system_prompt', 'version']
+    required_fields = ["description", "system_prompt", "version"]
     for field in required_fields:
         if field not in prompt_data:
             errors.append(f"Campo obrigatório faltando: {field}")
 
-    system_prompt = prompt_data.get('system_prompt', '').strip()
+    system_prompt = prompt_data.get("system_prompt", "").strip()
     if not system_prompt:
         errors.append("system_prompt está vazio")
 
-    if 'TODO' in system_prompt:
+    if "TODO" in system_prompt:
         errors.append("system_prompt ainda contém TODOs")
 
-    techniques = prompt_data.get('techniques_applied', [])
+    techniques = prompt_data.get("techniques_applied", [])
     if len(techniques) < 2:
-        errors.append(f"Mínimo de 2 técnicas requeridas, encontradas: {len(techniques)}")
+        errors.append(
+            f"Mínimo de 2 técnicas requeridas, encontradas: {len(techniques)}"
+        )
 
     return (len(errors) == 0, errors)
 
 
-def extract_json_from_response(response_text: str) -> Optional[Dict[str, Any]]:
+def extract_json_from_response(response_text: str) -> dict[str, Any] | None:
     """
     Extrai JSON de uma resposta de LLM que pode conter texto adicional.
 
@@ -160,8 +163,8 @@ def extract_json_from_response(response_text: str) -> Optional[Dict[str, Any]]:
     try:
         return json.loads(response_text)
     except json.JSONDecodeError:
-        start = response_text.find('{')
-        end = response_text.rfind('}') + 1
+        start = response_text.find("{")
+        end = response_text.rfind("}") + 1
 
         if start != -1 and end > start:
             try:
@@ -173,7 +176,7 @@ def extract_json_from_response(response_text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_llm(model: Optional[str] = None, temperature: float = 0.0):
+def get_llm(model: str | None = None, temperature: float = 0.0):
     """
     Retorna uma instância de LLM configurada baseada no provider.
 
@@ -187,13 +190,13 @@ def get_llm(model: Optional[str] = None, temperature: float = 0.0):
     Raises:
         ValueError: Se provider não for suportado ou API key não configurada
     """
-    provider = os.getenv('LLM_PROVIDER', 'openai').lower()
-    model_name = model or os.getenv('LLM_MODEL', 'gpt-4o-mini')
+    provider = os.getenv("LLM_PROVIDER", "openai").lower()
+    model_name = model or os.getenv("LLM_MODEL", "gpt-4o-mini")
 
-    if provider == 'openai':
+    if provider == "openai":
         from langchain_openai import ChatOpenAI
 
-        api_key = os.getenv('OPENAI_API_KEY')
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError(
                 "OPENAI_API_KEY não configurada no .env\n"
@@ -203,13 +206,13 @@ def get_llm(model: Optional[str] = None, temperature: float = 0.0):
         return ChatOpenAI(
             model=model_name,
             temperature=temperature,
-            api_key=api_key
+            api_key=api_key,  # type: ignore
         )
 
-    elif provider == 'google':
+    elif provider == "google":
         from langchain_google_genai import ChatGoogleGenerativeAI
 
-        api_key = os.getenv('GOOGLE_API_KEY')
+        api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError(
                 "GOOGLE_API_KEY não configurada no .env\n"
@@ -217,9 +220,7 @@ def get_llm(model: Optional[str] = None, temperature: float = 0.0):
             )
 
         return ChatGoogleGenerativeAI(
-            model=model_name,
-            temperature=temperature,
-            google_api_key=api_key
+            model=model_name, temperature=temperature, google_api_key=api_key
         )
 
     else:
@@ -239,5 +240,5 @@ def get_eval_llm(temperature: float = 0.0):
     Returns:
         Instância de LLM configurada para avaliação
     """
-    eval_model = os.getenv('EVAL_MODEL', 'gpt-4o')
+    eval_model = os.getenv("EVAL_MODEL", "gpt-4o")
     return get_llm(model=eval_model, temperature=temperature)
