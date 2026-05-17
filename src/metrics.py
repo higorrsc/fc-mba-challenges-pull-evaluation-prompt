@@ -21,13 +21,14 @@ Suporta múltiplos providers de LLM:
 Configure o provider no arquivo .env através da variável LLM_PROVIDER.
 """
 
-import os
 import json
-import re
-from typing import Dict, Any
+import os
+from typing import Any
+
 from dotenv import load_dotenv
-from langchain_core.messages import SystemMessage, HumanMessage
-from utils import get_eval_llm
+from langchain_core.messages import HumanMessage
+
+from .utils import get_eval_llm
 
 load_dotenv()
 
@@ -40,7 +41,7 @@ def get_evaluator_llm():
     return get_eval_llm(temperature=0)
 
 
-def extract_json_from_response(response_text: str) -> Dict[str, Any]:
+def extract_json_from_response(response_text: str) -> dict[str, Any]:
     """
     Extrai JSON de uma resposta de LLM que pode conter texto adicional.
     """
@@ -49,8 +50,8 @@ def extract_json_from_response(response_text: str) -> Dict[str, Any]:
         return json.loads(response_text)
     except json.JSONDecodeError:
         # Tentar encontrar JSON no meio do texto
-        start = response_text.find('{')
-        end = response_text.rfind('}') + 1
+        start = response_text.find("{")
+        end = response_text.rfind("}") + 1
 
         if start != -1 and end > start:
             try:
@@ -64,7 +65,7 @@ def extract_json_from_response(response_text: str) -> Dict[str, Any]:
         return {"score": 0.0, "reasoning": "Erro ao processar resposta"}
 
 
-def evaluate_f1_score(question: str, answer: str, reference: str) -> Dict[str, Any]:
+def evaluate_f1_score(question: str, answer: str, reference: str) -> dict[str, Any]:
     """
     Calcula F1-Score usando LLM-as-Judge.
 
@@ -144,7 +145,7 @@ NÃO adicione nenhum texto antes ou depois do JSON.
             "score": round(f1_score, 4),
             "precision": round(precision, 4),
             "recall": round(recall, 4),
-            "reasoning": result.get("reasoning", "")
+            "reasoning": result.get("reasoning", ""),
         }
 
     except Exception as e:
@@ -153,11 +154,11 @@ NÃO adicione nenhum texto antes ou depois do JSON.
             "score": 0.0,
             "precision": 0.0,
             "recall": 0.0,
-            "reasoning": f"Erro na avaliação: {str(e)}"
+            "reasoning": f"Erro na avaliação: {str(e)}",
         }
 
 
-def evaluate_clarity(question: str, answer: str, reference: str) -> Dict[str, Any]:
+def evaluate_clarity(question: str, answer: str, reference: str) -> dict[str, Any]:
     """
     Avalia a clareza e estrutura da resposta usando LLM-as-Judge.
 
@@ -230,20 +231,14 @@ NÃO adicione nenhum texto antes ou depois do JSON.
 
         score = float(result.get("score", 0.0))
 
-        return {
-            "score": round(score, 4),
-            "reasoning": result.get("reasoning", "")
-        }
+        return {"score": round(score, 4), "reasoning": result.get("reasoning", "")}
 
     except Exception as e:
         print(f"❌ Erro ao avaliar Clarity: {e}")
-        return {
-            "score": 0.0,
-            "reasoning": f"Erro na avaliação: {str(e)}"
-        }
+        return {"score": 0.0, "reasoning": f"Erro na avaliação: {str(e)}"}
 
 
-def evaluate_precision(question: str, answer: str, reference: str) -> Dict[str, Any]:
+def evaluate_precision(question: str, answer: str, reference: str) -> dict[str, Any]:
     """
     Avalia a precisão da resposta usando LLM-as-Judge.
 
@@ -264,7 +259,7 @@ def evaluate_precision(question: str, answer: str, reference: str) -> Dict[str, 
             "reasoning": "Explicação do LLM..."
         }
     """
-    
+
     evaluator_prompt = f"""
 Você é um avaliador especializado em detectar PRECISÃO e ALUCINAÇÕES em respostas de IA.
 
@@ -317,20 +312,18 @@ NÃO adicione nenhum texto antes ou depois do JSON.
 
         score = float(result.get("score", 0.0))
 
-        return {
-            "score": round(score, 4),
-            "reasoning": result.get("reasoning", "")
-        }
+        return {"score": round(score, 4), "reasoning": result.get("reasoning", "")}
 
     except Exception as e:
         print(f"❌ Erro ao avaliar Precision: {e}")
-        return {
-            "score": 0.0,
-            "reasoning": f"Erro na avaliação: {str(e)}"
-        }
+        return {"score": 0.0, "reasoning": f"Erro na avaliação: {str(e)}"}
 
 
-def evaluate_tone_score(bug_report: str, user_story: str, reference: str) -> Dict[str, Any]:
+def evaluate_tone_score(
+    bug_report: str,
+    user_story: str,
+    reference: str,
+) -> dict[str, Any]:
     """
     Avalia o tom da user story (profissional e empático).
 
@@ -402,20 +395,18 @@ NÃO adicione nenhum texto antes ou depois do JSON.
 
         score = float(result.get("score", 0.0))
 
-        return {
-            "score": round(score, 4),
-            "reasoning": result.get("reasoning", "")
-        }
+        return {"score": round(score, 4), "reasoning": result.get("reasoning", "")}
 
     except Exception as e:
         print(f"❌ Erro ao avaliar Tone Score: {e}")
-        return {
-            "score": 0.0,
-            "reasoning": f"Erro na avaliação: {str(e)}"
-        }
+        return {"score": 0.0, "reasoning": f"Erro na avaliação: {str(e)}"}
 
 
-def evaluate_acceptance_criteria_score(bug_report: str, user_story: str, reference: str) -> Dict[str, Any]:
+def evaluate_acceptance_criteria_score(
+    bug_report: str,
+    user_story: str,
+    reference: str,
+) -> dict[str, Any]:
     """
     Avalia a qualidade dos critérios de aceitação.
 
@@ -490,20 +481,18 @@ NÃO adicione nenhum texto antes ou depois do JSON.
 
         score = float(result.get("score", 0.0))
 
-        return {
-            "score": round(score, 4),
-            "reasoning": result.get("reasoning", "")
-        }
+        return {"score": round(score, 4), "reasoning": result.get("reasoning", "")}
 
     except Exception as e:
         print(f"❌ Erro ao avaliar Acceptance Criteria Score: {e}")
-        return {
-            "score": 0.0,
-            "reasoning": f"Erro na avaliação: {str(e)}"
-        }
+        return {"score": 0.0, "reasoning": f"Erro na avaliação: {str(e)}"}
 
 
-def evaluate_user_story_format_score(bug_report: str, user_story: str, reference: str) -> Dict[str, Any]:
+def evaluate_user_story_format_score(
+    bug_report: str,
+    user_story: str,
+    reference: str,
+) -> dict[str, Any]:
     """
     Avalia se a user story segue o formato padrão correto.
 
@@ -580,20 +569,18 @@ NÃO adicione nenhum texto antes ou depois do JSON.
 
         score = float(result.get("score", 0.0))
 
-        return {
-            "score": round(score, 4),
-            "reasoning": result.get("reasoning", "")
-        }
+        return {"score": round(score, 4), "reasoning": result.get("reasoning", "")}
 
     except Exception as e:
         print(f"❌ Erro ao avaliar User Story Format Score: {e}")
-        return {
-            "score": 0.0,
-            "reasoning": f"Erro na avaliação: {str(e)}"
-        }
+        return {"score": 0.0, "reasoning": f"Erro na avaliação: {str(e)}"}
 
 
-def evaluate_completeness_score(bug_report: str, user_story: str, reference: str) -> Dict[str, Any]:
+def evaluate_completeness_score(
+    bug_report: str,
+    user_story: str,
+    reference: str,
+) -> dict[str, Any]:
     """
     Avalia a completude da user story em relação ao bug.
 
@@ -680,17 +667,11 @@ NÃO adicione nenhum texto antes ou depois do JSON.
 
         score = float(result.get("score", 0.0))
 
-        return {
-            "score": round(score, 4),
-            "reasoning": result.get("reasoning", "")
-        }
+        return {"score": round(score, 4), "reasoning": result.get("reasoning", "")}
 
     except Exception as e:
         print(f"❌ Erro ao avaliar Completeness Score: {e}")
-        return {
-            "score": 0.0,
-            "reasoning": f"Erro na avaliação: {str(e)}"
-        }
+        return {"score": 0.0, "reasoning": f"Erro na avaliação: {str(e)}"}
 
 
 # Exemplo de uso e testes
@@ -712,7 +693,9 @@ if __name__ == "__main__":
     # Teste das métricas gerais
     test_question = "Qual o horário de funcionamento da loja?"
     test_answer = "A loja funciona de segunda a sexta das 9h às 18h."
-    test_reference = "Horário de funcionamento: Segunda a Sexta 9:00-18:00, Sábado 9:00-14:00"
+    test_reference = (
+        "Horário de funcionamento: Segunda a Sexta 9:00-18:00, Sábado 9:00-14:00"
+    )
 
     print("\n1. F1-Score:")
     f1_result = evaluate_f1_score(test_question, test_answer, test_reference)
@@ -754,17 +737,23 @@ Critérios de Aceitação:
     print(f"   Reasoning: {tone_result['reasoning']}\n")
 
     print("5. Acceptance Criteria Score (Qualidade dos critérios):")
-    criteria_result = evaluate_acceptance_criteria_score(test_bug, test_user_story, test_reference_story)
+    criteria_result = evaluate_acceptance_criteria_score(
+        test_bug, test_user_story, test_reference_story
+    )
     print(f"   Score: {criteria_result['score']:.2f}")
     print(f"   Reasoning: {criteria_result['reasoning']}\n")
 
     print("6. User Story Format Score (Formato correto):")
-    format_result = evaluate_user_story_format_score(test_bug, test_user_story, test_reference_story)
+    format_result = evaluate_user_story_format_score(
+        test_bug, test_user_story, test_reference_story
+    )
     print(f"   Score: {format_result['score']:.2f}")
     print(f"   Reasoning: {format_result['reasoning']}\n")
 
     print("7. Completeness Score (Completude e contexto):")
-    completeness_result = evaluate_completeness_score(test_bug, test_user_story, test_reference_story)
+    completeness_result = evaluate_completeness_score(
+        test_bug, test_user_story, test_reference_story
+    )
     print(f"   Score: {completeness_result['score']:.2f}")
     print(f"   Reasoning: {completeness_result['reasoning']}\n")
 
