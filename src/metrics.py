@@ -28,7 +28,7 @@ from typing import Any
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 
-from .utils import get_eval_llm
+from utils import get_eval_llm
 
 load_dotenv()
 
@@ -720,7 +720,9 @@ if __name__ == "__main__":
 
     # Teste das métricas específicas de Bug to User Story
     test_bug = "Botão de adicionar ao carrinho não funciona no produto ID 1234."
-    test_user_story = """Como um cliente navegando na loja, eu quero adicionar produtos ao meu carrinho de compras, para que eu possa continuar comprando e finalizar minha compra depois.
+    test_user_story = """Como um cliente navegando na loja, eu quero adicionar
+    produtos ao meu carrinho de compras, para que eu possa continuar comprando
+    e finalizar minha compra depois.
 
 Critérios de Aceitação:
 - Dado que estou visualizando um produto

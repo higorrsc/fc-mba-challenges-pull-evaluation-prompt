@@ -28,9 +28,9 @@ from langchain import hub
 from langchain_core.prompts import ChatPromptTemplate
 from langsmith import Client
 
-from .metrics import evaluate_clarity, evaluate_f1_score, evaluate_precision
-from .utils import check_env_vars, format_score, print_section_header
-from .utils import get_llm as get_configured_llm
+from metrics import evaluate_clarity, evaluate_f1_score, evaluate_precision
+from utils import check_env_vars, format_score, print_section_header
+from utils import get_llm as get_configured_llm
 
 load_dotenv()
 
