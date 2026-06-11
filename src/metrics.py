@@ -80,7 +80,7 @@ def evaluate_f1_score(question: str, answer: str, reference: str) -> dict[str, A
         Dict com score e reasoning:
         {
             "score": 0.95,
-            "precision": 0.9,
+            "precision": 0.8,
             "recall": 0.99,
             "reasoning": "Explicação do LLM..."
         }
