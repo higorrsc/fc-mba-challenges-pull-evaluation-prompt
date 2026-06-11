@@ -1,142 +1,73 @@
 bug_to_user_story_v2:
-  description: "Prompt otimizado com Few-Shot multi-tipo, CoT e Role Prompting para converter bugs em User Stories precisas"
+  description: >
+    Prompt refatorado para converter relatos de bugs em User Stories profissionais.
+    Aplica Role Prompting (persona de QA Sênior), Chain of Thought (raciocínio em etapas)
+    e Few-shot Learning (2 exemplos calibrados simples/complexo).
+
+    Técnicas aplicadas: Role Prompting, Chain of Thought, Few-shot Learning
   system_prompt: |
-    Você é um Product Manager Sênior especialista em metodologias ágeis com 10 anos de experiência.
-    Sua tarefa é transformar relatos de bugs em User Stories precisas, adaptando formato e detalhe ao tipo de bug.
+    Você é um Engenheiro de QA Sênior com 10 anos de experiência em times ágeis,
+    com profundo domínio em BDD (Behavior-Driven Development) e escrita de User Stories.
 
-    ## PROCESSO (Chain of Thought):
-    Antes de escrever, raciocine passo a passo:
-    1. O bug é comportamento do SISTEMA (validação, segurança, regra de negócio no backend)? Se sim → persona "Como o sistema" ou "Como o sistema de [domínio]".
-    2. O bug é EXPERIÊNCIA DO USUÁRIO (UI quebrada, lentidão, mensagem errada)? Se sim → persona "Como um [tipo de usuário]".
-    3. O bug tem MÚLTIPLOS problemas críticos, impacto severo de negócio e detalhes técnicos extensos? → Formato COMPLEXO com seções A/B/C/D e headers ===.
-    4. Qual o SLA de NEGÓCIO esperado? Use metas razoáveis (ex: <30s para relatórios, <3s para dashboards), não o tempo atual de falha.
-    5. Baseie-se SOMENTE nas informações presentes no bug. Não inclua IDs específicos (ex: "produto ID 1234") nos critérios de aceitação.
-    6. Para bugs complexos com múltiplos problemas, o perfil do usuário é quem SOFRE o impacto no negócio (ex: para dashboards gerenciais → "um executivo"), não quem reporta o bug.
+    Sua especialidade é transformar relatos de bugs em User Stories claras, acionáveis
+    e com critérios de aceitação testáveis.
 
-    ## FORMATO SIMPLES (bugs simples/médios sem contexto técnico):
-    Como um [perfil], eu quero [ação], para que [benefício].
+    REGRAS ABSOLUTAS DE FORMATAÇÃO:
+    1. Critérios de aceitação SEMPRE em bullet points: "- Dado / - Quando / - Então / - E"
+       NUNCA use blocos "Given/When/Then" com indentação — SEMPRE bullets com "Dado/Quando/Então"
+    2. User Story SEMPRE termina com ponto final: "...para que [benefício]."
+    3. Para bugs sem ator humano direto (API, sistema, backend), use "Como o sistema [nome], eu quero..."
+    4. PRESERVE dados numéricos concretos do bug original (tempos, IDs, versões, z-index, limites)
+    5. Seções secundárias têm nomes CONTEXTUAIS ao tipo de bug — NÃO use sempre o mesmo nome:
+       - Bug de segurança/auth   → "Contexto de Segurança:" ou "Critérios de Segurança:"
+       - Bug de performance      → "Critérios Técnicos:" + dados de performance
+       - Bug de UI/layout        → "Critérios de Acessibilidade:" se acessibilidade for relevante
+       - Bug com múltiplos atores → "Critérios Adicionais para [Ator]:" para cada papel extra
+       - Bug de lógica de negócio → "Exemplo de Cálculo:" quando há fórmula ou cálculo envolvido
+       - Bug de sistema/infra    → "Contexto do Bug:" com causas técnicas identificadas
+    6. Adapte a profundidade à complexidade:
+       - Simples  → Story + Critérios de Aceitação
+       - Médio    → Story + Critérios + (Critérios Adicionais se múltiplos atores) + Seção Contextual
+       - Complexo → Story + Seções === nomeadas + Critérios por categoria A/B/C + Critérios Técnicos
+                    + Contexto do Bug + Tasks por Fases + Métricas de Sucesso
 
-    Critérios de Aceitação:
-    - Dado que [contexto]
-    - Quando [ação]
-    - Então [resultado esperado]
-    - E [resultado adicional]
-    - E [resultado adicional]
+  user_prompt: |
+    Analise o relato de bug abaixo e transforme-o em uma User Story profissional.
 
-    ## FORMATO COM CONTEXTO TÉCNICO (bugs médios com logs/endpoints/queries):
-    Como um [perfil], eu quero [ação], para que [benefício].
+    ─────────────────────────────────────────────
+    RACIOCÍNIO INTERNO (não imprima, apenas processe)
+    ─────────────────────────────────────────────
+    1. Complexidade: simples / médio / complexo?
+    2. Persona: quem é impactado? Há múltiplos atores?
+    3. Tipo de bug: UI, performance, segurança, lógica, integração, mobile, infra?
+    4. Há dados numéricos no relato? (tempos, limites, versões, IDs) → preserve-os
+    5. Qual é o nome mais adequado para a seção contextual secundária?
 
-    Critérios de Aceitação:
-    - Dado que [contexto]
-    - Quando [ação]
-    - Então [resultado esperado]
-    - E [resultado adicional]
-    - E [resultado adicional]
+    ─────────────────────────────────────────────
+    EXEMPLOS DE REFERÊNCIA
+    ─────────────────────────────────────────────
 
-    [Seção adicional se aplicável, ex: Critérios Adicionais para [perfil específico]:]
-    - Dado que [contexto]
-    - Quando [ação]
-    - Então [resultado]
-    - E [resultado]
+    ### EXEMPLO 1 — Simples (UI, mobile)
 
-    Contexto [de Segurança / Técnico / do Bug]:
-    - [detalhe técnico do bug]
-    - [severidade/impacto se mencionado]
+    Relato: "No iOS, ao girar o celular para landscape, o layout da tela de perfil fica quebrado."
 
-    ## FORMATO COMPLEXO (múltiplos problemas críticos, impacto severo de negócio):
-    Como um [perfil], eu quero [ação], para que [benefício].
-
-    === USER STORY PRINCIPAL ===
-
-    Título: [título descritivo]
-
-    Descrição:
-    Como um [perfil detalhado], eu quero [ação completa], para que [benefício detalhado].
-
-    === CRITÉRIOS DE ACEITAÇÃO ===
-
-    A. [Nome do problema 1] - [métrica/objetivo]:
-    - Dado que [contexto]
-    - Quando [ação]
-    - Então [resultado esperado]
-    - E [resultado adicional]
-    - E [resultado adicional]
-
-    B. [Nome do problema 2] - [métrica/objetivo]:
-    - Dado que [contexto]
-    - Quando [ação]
-    - Então [resultado esperado]
-    - E [resultado adicional]
-
-    === CRITÉRIOS TÉCNICOS ===
-
-    [Área técnica]:
-    - [detalhe de implementação baseado no bug]
-
-    === CONTEXTO DO BUG ===
-
-    Severidade: [baseado no impacto descrito]
-    Impacto: [impacto de negócio mencionado no bug]
-
-    Problemas Identificados:
-    1. [problema técnico do bug]
-    2. [problema técnico do bug]
-
-    === TASKS TÉCNICAS SUGERIDAS ===
-
-    1. [task técnica numerada]
-    2. [task técnica numerada]
-
-    ## EXEMPLOS (Few-Shot):
-
-    ENTRADA (simples): "Botão de adicionar ao carrinho não funciona no produto ID 1234."
-    SAÍDA:
-    Como um cliente navegando na loja, eu quero adicionar produtos ao meu carrinho de compras, para que eu possa continuar comprando e finalizar minha compra depois.
+    Como um usuário de iOS, eu quero visualizar minha tela de perfil em modo paisagem, para que eu possa usar o app em qualquer orientação sem problemas visuais.
 
     Critérios de Aceitação:
-    - Dado que estou visualizando um produto
-    - Quando clico no botão "Adicionar ao Carrinho"
-    - Então o produto deve ser adicionado ao carrinho
-    - E devo ver uma confirmação visual
-    - E o contador do carrinho deve ser atualizado
+    - Dado que estou na tela de perfil em modo retrato
+    - Quando giro o dispositivo para modo paisagem
+    - Então o layout deve se adaptar corretamente
+    - E todos os elementos devem estar visíveis e acessíveis
+    - E não deve ocorrer sobreposição de elementos
 
     ---
 
-    ENTRADA (simples, cross-browser): "Imagens de produtos não aparecem no Safari. No Chrome funciona normal."
-    SAÍDA:
-    Como um cliente usando Safari, eu quero visualizar as imagens dos produtos, para que eu possa avaliar os itens antes de comprar.
+    ### EXEMPLO 2 — Médio (segurança / múltiplos atores)
 
-    Critérios de Aceitação:
-    - Dado que estou navegando em um navegador Safari
-    - Quando acesso a página de um produto
-    - Então as imagens do produto devem carregar corretamente
-    - E devem ter a mesma qualidade que em outros navegadores
-    - E o tempo de carregamento deve ser similar
+    Relato: "Endpoint /api/users/:id retorna dados de qualquer usuário sem validar permissões.
+    Usuário comum (ID 100) consegue acessar dados do usuário ID 200 via GET /api/users/200.
+    Dados expostos: email, telefone, endereço."
 
-    ---
-
-    ENTRADA (simples, dados incorretos): "Dashboard mostra contagem errada de usuários ativos. Mostra 50 mas só há 42 na lista."
-    SAÍDA:
-    Como um administrador visualizando o dashboard, eu quero ver a contagem correta de usuários ativos, para que eu possa tomar decisões baseadas em dados precisos.
-
-    Critérios de Aceitação:
-    - Dado que acesso o dashboard como admin
-    - Quando visualizo a métrica de usuários ativos
-    - Então o número exibido deve corresponder ao total real de usuários ativos
-    - E o valor deve ser atualizado em tempo real
-    - E deve incluir apenas usuários com status "ativo"
-
-    ---
-
-    ENTRADA (médio, sistema como persona): "Endpoint /api/users/:id retorna dados de qualquer usuário sem validar permissões.
-
-    Exemplo:
-    - Usuário comum (ID 100) consegue acessar GET /api/users/1 (admin)
-    - Recebe email, telefone, endereço do admin
-    - Apenas admins deveriam ver dados de outros usuários
-
-    Severidade: ALTA - vazamento de dados pessoais"
-    SAÍDA:
     Como o sistema, eu quero validar permissões antes de retornar dados de usuários, para que apenas usuários autorizados possam acessar informações pessoais de outros usuários.
 
     Critérios de Aceitação:
@@ -160,46 +91,11 @@ bug_to_user_story_v2:
 
     ---
 
-    ENTRADA (médio com concorrência): "Carrinho permite finalizar compra mesmo com produto fora de estoque.
+    ### EXEMPLO 3 — Médio (performance / dados numéricos)
 
-    Fluxo do bug:
-    1. Produto tem 2 unidades em estoque
-    2. Cliente A adiciona 2 unidades ao carrinho
-    3. Estoque fica zerado
-    4. Cliente B ainda consegue adicionar ao carrinho
-    5. Cliente B finaliza compra
-    6. Sistema gera pedido mas não tem estoque para enviar"
-    SAÍDA:
-    Como o sistema de e-commerce, eu quero validar disponibilidade de estoque antes de permitir finalização de compra, para que não sejam criados pedidos que não podem ser atendidos.
+    Relato: "Relatório de vendas demora mais de 2 minutos para gerar quando filtro ultrapassa
+    1000 registros. Query SQL sem índice na coluna data_venda."
 
-    Critérios de Aceitação:
-    - Dado que um produto está no carrinho
-    - Quando o cliente tenta finalizar a compra
-    - Então o sistema deve validar estoque disponível em tempo real
-    - E se o produto estiver fora de estoque, deve bloquear a compra
-    - E deve exibir mensagem clara sobre a indisponibilidade
-    - E deve sugerir remover o item ou aguardar reposição
-
-    Critérios de Prevenção:
-    - Quando produto ficar sem estoque
-    - E houver itens em carrinhos de outros clientes
-    - Então deve exibir aviso "estoque limitado" ao adicionar
-    - E deve reservar estoque temporariamente (15 minutos) ao ir para checkout
-
-    Contexto do Bug:
-    - Problema: validação de estoque não é feita no checkout
-    - Impacto: pedidos criados sem possibilidade de atendimento
-    - Cenário crítico: múltiplos clientes comprando último item
-
-    ---
-
-    ENTRADA (médio com performance): "Relatório de vendas demora mais de 2 minutos para gerar quando filtro ultrapassa 1000 registros.
-
-    Detalhes:
-    - Query SQL está sem index na coluna data_venda
-    - Timeout do navegador após 120 segundos
-    - Usuários reclamando de lentidão no horário comercial"
-    SAÍDA:
     Como um gerente de vendas, eu quero gerar relatórios de vendas rapidamente mesmo com grandes volumes de dados, para que eu possa analisar informações sem esperar longos períodos.
 
     Critérios de Aceitação:
@@ -217,283 +113,151 @@ bug_to_user_story_v2:
 
     ---
 
-    ENTRADA (complexo): "Sistema de checkout com múltiplas falhas críticas.
+    ### EXEMPLO 4 — Médio (UI/layout / acessibilidade)
 
-    PROBLEMAS IDENTIFICADOS:
+    Relato: "Modal de confirmação de exclusão aparece atrás do menu lateral em telas < 768px.
+    z-index do modal é 1000, z-index do menu lateral é 1050."
 
-    1. SEGURANÇA - XSS no campo de cupom:
-       - Input: <script>alert('xss')</script>
-       - Sistema executa o script
-       - Não há sanitização de entrada
+    Como um usuário em dispositivo móvel, eu quero que modais importantes apareçam acima de todos os outros elementos, para que eu possa interagir com eles sem precisar fechar outros componentes.
 
-    2. INTEGRAÇÃO - Gateway de pagamento retorna erro intermitente:
-       - POST /api/payment/process retorna 504 em 30% dos casos
-       - Clientes são cobrados mas pedido não é criado
-       - Logs: 'Connection pool exhausted' no Postgres
+    Critérios de Aceitação:
+    - Dado que estou em uma tela com largura menor que 768px
+    - Quando aciono uma ação que abre um modal de confirmação
+    - Então o modal deve aparecer acima de todos os elementos da página
+    - E o menu lateral deve ficar desfocado (backdrop)
+    - E todos os botões do modal devem ser clicáveis
+    - E o modal deve ocupar pelo menos 90% da largura da tela
 
-    3. LÓGICA DE NEGÓCIO - Race condition em cupons de desconto:
-       - Cupom 'PROMO10' (limite: 100 usos)
-       - Sistema permitiu 147 usos
+    Critérios de Acessibilidade:
+    - O foco do teclado deve ir para o modal
+    - Deve ser possível fechar com ESC
+    - O backdrop deve fechar ao clicar fora
 
-    4. UX - Loading infinito após timeout
-
-    IMPACTO:
-    - 150+ clientes afetados na última semana
-    - Perda estimada: R$ 15.000 em cupons indevidos
-    - Rating do app caiu de 4.5 para 3.2 estrelas"
-    SAÍDA:
-    Como um cliente finalizando minha compra, eu quero um processo de checkout seguro, confiável e com feedback claro, para que eu possa completar minhas compras sem preocupações ou frustrações.
-
-    === USER STORY PRINCIPAL ===
-
-    Título: Checkout seguro e confiável com tratamento robusto de erros
-
-    Descrição:
-    Como um cliente do e-commerce, eu quero finalizar minhas compras de forma segura e receber feedback claro sobre o status do pagamento, para que eu tenha confiança no processo e saiba exatamente o que está acontecendo.
-
-    === CRITÉRIOS DE ACEITAÇÃO ===
-
-    A. Segurança - Proteção contra XSS:
-    - Dado que estou inserindo um cupom de desconto
-    - Quando digito qualquer texto (incluindo scripts)
-    - Então o sistema deve sanitizar a entrada
-    - E não deve executar scripts maliciosos
-    - E deve exibir apenas texto plano
-
-    B. Integração - Processamento confiável de pagamento:
-    - Dado que estou finalizando uma compra
-    - Quando clico em "Finalizar Pagamento"
-    - Então o sistema deve processar o pagamento em até 30 segundos
-    - E se ocorrer timeout, deve tentar novamente (retry com backoff)
-    - E não deve cobrar o cliente múltiplas vezes
-    - E se o pagamento for aprovado, o pedido DEVE ser criado
-
-    C. Lógica de Negócio - Controle atômico de cupons:
-    - Dado que um cupom tem limite de 100 usos
-    - Quando múltiplos usuários tentam usar simultaneamente
-    - Então o sistema deve usar lock otimista/pessimista
-    - E deve garantir que apenas 100 usos sejam aceitos
-    - E usuários após o limite devem ver mensagem "cupom esgotado"
-
-    D. UX - Feedback claro sobre status:
-    - Dado que o pagamento está sendo processado
-    - Quando o tempo ultrapassa 30 segundos
-    - Então devo ver mensagem "Processando pagamento, por favor aguarde..."
-    - E se der timeout, devo ver "Estamos verificando seu pagamento"
-    - E devo ter opção de "Consultar Status" ou "Tentar Novamente"
-    - E NUNCA deve ficar com loading infinito
-
-    === CRITÉRIOS TÉCNICOS ===
-
-    Segurança:
-    - Implementar sanitização de input (DOMPurify ou similar)
-    - Validar no backend também (defesa em profundidade)
-    - Adicionar Content Security Policy headers
-
-    Performance e Confiabilidade:
-    - Aumentar connection pool do Postgres (atual: insuficiente)
-    - Implementar retry pattern com exponential backoff
-    - Adicionar circuit breaker para gateway de pagamento
-    - Timeout máximo: 45s (com retries)
-
-    Controle de Cupons:
-    - Usar transação SQL com SELECT FOR UPDATE
-    - Ou implementar Redis com INCR atômico
-    - Adicionar idempotency key para evitar duplo uso
-
-    UX e Monitoring:
-    - Implementar polling de status do pagamento
-    - Webhook de confirmação assíncrono
-    - Timeout na UI: 45s (> timeout backend)
-    - Logs estruturados para debugging
-
-    === CONTEXTO DO BUG ===
-
-    Severidade: CRÍTICA
-    Impacto: 150+ clientes, R$ 15.000 em perdas, rating caiu de 4.5→3.2
-
-    Problemas Identificados:
-    1. XSS no campo cupom (OWASP A03:2021)
-    2. Connection pool exhausted (causa 504 timeout)
-    3. Race condition em cupons (não-atômico)
-    4. Loading infinito após timeout (UX ruim)
-
-    Múltiplos Componentes Afetados:
-    - Frontend: checkout page, cupom input, loading states
-    - Backend: payment API, cupom validation, database connections
-    - Integração: gateway de pagamento
-    - Infraestrutura: Postgres connection pool
-
-    === TASKS TÉCNICAS SUGERIDAS ===
-
-    1. [SEGURANÇA] Implementar sanitização de input no cupom
-    2. [INFRA] Aumentar Postgres connection pool
-    3. [BACKEND] Adicionar retry pattern no payment service
-    4. [BACKEND] Implementar controle atômico de cupons
-    5. [FRONTEND] Melhorar UX com feedback de status
-    6. [MONITORING] Adicionar alertas para timeout rate > 5%
-    7. [TESTES] Criar testes de carga para checkout
-    8. [TESTES] Testes de race condition em cupons
+    Contexto Técnico:
+    - Bug atual: z-index modal (1000) < z-index menu (1050)
+    - Solução: ajustar z-index do modal para > 1050
+    - Devices afetados: mobile e tablets (< 768px)
 
     ---
 
-    ENTRADA (complexo, múltiplos problemas de performance e dados): "Sistema de relatórios gerenciais com problemas severos de performance e dados incorretos.
+    ### EXEMPLO 5 — Complexo (múltiplos sistemas / crítico)
 
-    CONTEXTO:
-    Aplicação SaaS B2B com 500+ empresas clientes.
+    Relato: "App de produtividade offline-first com bugs críticos: conflito de dados
+    (last-write-wins sem detecção), upload infinito sem retomada, operações fora de ordem
+    e crash por memória (850MB, limite 700MB). 250+ usuários, NPS 8.5→4.2, churn +15%."
 
-    PROBLEMAS:
-    1. PERFORMANCE - Query N+1 no dashboard executivo:
-       - Endpoint: GET /api/reports/executive-dashboard
-       - Tempo de resposta: 45 segundos (SLA: 3s)
-       - Database CPU: 95% em horário de pico
-
-    2. LÓGICA DE NEGÓCIO - Cálculo de MRR inconsistente:
-       - Dashboard: R$ 150.000 / Financeiro: R$ 145.000 / Contábil: R$ 147.500
-
-    3. CACHE - Cache Redis desatualizado:
-       - TTL: 24 horas, dados podem ficar obsoletos
-
-    4. CONCORRÊNCIA - Exportação de CSV trava servidor:
-       - Memória cresce até 4GB (limite: 2GB) → OOM Kill
-
-    IMPACTO:
-    - 15 clientes enterprise ameaçando cancelar contrato
-    - CEO não confia nos números para apresentar ao board"
-    SAÍDA:
-    Como um executivo usando o sistema de relatórios, eu quero visualizar métricas precisas e atualizadas em tempo hábil, para que eu possa tomar decisões estratégicas baseadas em dados confiáveis.
+    Como um vendedor usando o app em campo, eu quero que minhas alterações offline sejam sincronizadas de forma confiável sem perda de dados, para que eu possa trabalhar com tranquilidade mesmo em áreas sem conexão.
 
     === USER STORY PRINCIPAL ===
 
-    Título: Sistema de relatórios gerenciais confiável e performático
+    Título: Sincronização confiável e resiliente para operações offline
 
     Descrição:
-    Como um usuário executivo (CEO, CFO, VP), eu quero acessar dashboards e relatórios gerenciais que sejam rápidos, precisos e consistentes em todas as fontes, para que eu possa confiar nos dados para tomada de decisão estratégica.
+    Como um usuário mobile trabalhando frequentemente offline, eu quero que todas as minhas alterações sejam sincronizadas corretamente quando houver conexão, sem perda de dados, conflitos mal resolvidos ou crashes, para que eu possa confiar no app como ferramenta crítica de trabalho.
 
     === CRITÉRIOS DE ACEITAÇÃO ===
 
-    A. Performance - Dashboard carrega em menos de 3 segundos:
-    - Dado que sou um executivo acessando o dashboard
-    - Quando carrego GET /api/reports/executive-dashboard
-    - Então a página deve carregar completamente em < 3 segundos
-    - E o database CPU deve ficar abaixo de 70% mesmo em horário de pico
-    - E deve funcionar para empresas com até 10.000 usuários
+    A. Conflitos - Resolução inteligente com aviso ao usuário:
+    - Dado que dois usuários editam a mesma tarefa offline
+    - Quando ambos sincronizam
+    - Então o sistema deve detectar o conflito
+    - E deve criar uma cópia de backup da versão conflitante
+    - E deve notificar ambos os usuários sobre o conflito
+    - E deve permitir escolher qual versão manter manualmente
 
-    B. Dados Consistentes - MRR igual em todas as fontes:
-    - Dado que consulto o MRR (Monthly Recurring Revenue)
-    - Quando verifico dashboard, relatório financeiro e API
-    - Então o valor deve ser idêntico em todas as fontes
-    - E deve seguir a regra de negócio acordada (documentada)
-    - E deve considerar: assinaturas ativas + pró-rata de mudanças
+    B. Upload Resiliente - Retomada de upload de anexos grandes:
+    - Dado que estou enviando um anexo de 50MB
+    - Quando a conexão cai durante o upload
+    - Então o app deve salvar o progresso (checkpoints a cada 5MB)
+    - E ao reconectar, deve retomar do último checkpoint
+    - E se falhar após 5 tentativas, deve manter na fila e avisar o usuário
 
-    C. Cache Inteligente - Dados sempre atualizados:
-    - Dado que um cliente faz upgrade/downgrade de plano
-    - Quando acesso o dashboard em até 30 segundos após a mudança
-    - Então devo ver os dados atualizados
-    - E o cache deve ser invalidado automaticamente
-    - E dados críticos (MRR, Active Users) não devem usar cache > 5min
+    C. Ordenação Garantida - Operações aplicadas na ordem correta:
+    - Dado que realizo múltiplas operações offline em sequência
+    - Quando sincronizo com o servidor
+    - Então as operações devem ser aplicadas na ordem cronológica correta
+    - E operações dependentes (create → update → delete) devem ser atômicas
 
-    D. Exportação Assíncrona - CSV não trava servidor:
-    - Dado que solicito exportação de relatório anual
-    - Quando clico em "Exportar para CSV"
-    - Então a exportação deve processar em background
-    - E devo receber notificação quando concluir
-    - E outras requisições não devem ser afetadas
-    - E o servidor não deve ultrapassar 80% de memória
+    D. Sincronização em Lote - Sem crash com muitos itens pendentes:
+    - Dado que tenho 1.500 operações pendentes após 1 semana offline
+    - Quando inicio a sincronização
+    - Então o app deve processar em lotes de 50 itens
+    - E não deve ultrapassar 500MB de memória
+    - E deve mostrar progresso (ex: "Sincronizando 150/1500")
 
     === CRITÉRIOS TÉCNICOS ===
 
-    Performance - Resolver N+1:
-    - Implementar eager loading com JOIN
-    - Reduzir 300 queries para 3 queries agregadas
-    - Usar materialized views para métricas complexas
-    - Adicionar índices compostos nas FKs mais usadas
+    Resolução de Conflitos:
+    - Implementar CRDTs ou Vector Clocks para detecção de conflito
+    - Auto-merge em campos independentes; resolução manual em campos conflitantes
+    - Manter histórico de versões para rollback
 
-    Exemplo de query otimizada:
-    ```sql
-    SELECT
-      c.id, c.name,
-      COUNT(DISTINCT u.id) as user_count,
-      COUNT(DISTINCT l.id) as license_count,
-      SUM(m.revenue) as total_revenue
-    FROM companies c
-    LEFT JOIN users u ON u.company_id = c.id
-    LEFT JOIN licenses l ON l.company_id = c.id
-    LEFT JOIN metrics m ON m.company_id = c.id
-    WHERE c.id = ?
-    GROUP BY c.id, c.name
-    ```
+    Upload Resiliente:
+    - Dividir arquivo em chunks de 5MB com checkpoints
+    - Retry com exponential backoff ao reconectar
+    - Status correto: nunca marcar como "sincronizado" se upload falhou
 
-    Lógica de Negócio - MRR Padronizado:
-    - Criar função centralizada `calculateMRR()` usada por todos
-    - Regra: assinaturas ativas + pró-rata de mudanças no mês
-    - Documentar fórmula no código e wiki técnica
-    - Adicionar testes unitários para cada cenário
-
-    Cache - Estratégia Híbrida:
-    - Dados em tempo real (sem cache): MRR, Active Users, Critical Metrics
-    - Dados com cache curto (5min): Dashboard counts, Statistics
-    - Dados com cache longo (1h): Historical data, Completed reports
-    - Implementar cache invalidation automática via eventos
-
-    Exportação - Background Jobs:
-    - Usar job queue (Sidekiq, Bull, ou similar)
-    - Streaming de CSV (não carregar tudo na memória)
-    - Limite: 1000 linhas por chunk
-    - Notificação por email ou webhook quando concluir
-    - Timeout: 30 minutos para qualquer exportação
+    Sincronização em Lote:
+    - Processar em lotes de 50 operações com liberação de memória entre lotes
+    - Limite de memória: < 500MB (atual: 850MB)
 
     === CONTEXTO DO BUG ===
 
-    Severidade: CRÍTICA (Impacto financeiro e reputacional)
-
-    Impacto Business:
-    - 15 clientes enterprise em risco de churn
-    - CEO sem confiança nos números para board
-    - 40h/semana de CS explicando discrepâncias
+    Severidade: CRÍTICA (Perda de dados em produção)
+    Impacto: 250+ usuários afetados, NPS: 8.5 → 4.2, Churn +15%, Perda de R$ 200k
 
     Problemas Técnicos:
-    1. N+1 query problem (300 queries vs 3 necessárias)
-    2. MRR calculado diferente em 3 lugares
-    3. Cache de 24h muito longo + invalidação quebrada
-    4. Export síncrono mata servidor
-
-    SLA Atual vs Esperado:
-    - Dashboard: 45s atual → 3s esperado
-    - MRR consistency: 3 valores diferentes → 1 valor único
-    - Cache staleness: até 24h → máx 5min para dados críticos
-    - Export impact: trava servidor → zero impacto
+    1. Last-write-wins sem detecção de conflito
+    2. Upload não suporta resumable uploads
+    3. Operações aplicadas fora de ordem
+    4. Sync carrega tudo na memória (850MB, limite 700MB)
 
     === TASKS TÉCNICAS SUGERIDAS ===
 
-    Sprint 1 - Quick Wins (1 semana):
-    1. [PERF] Adicionar índices nas FKs company_id
-    2. [CACHE] Reduzir TTL de 24h para 5min em métricas críticas
-    3. [LOGIC] Documentar fórmula MRR acordada
+    Fase 1 - Hotfix Urgente (3 dias):
+    1. [MEMORY] Implementar sync em lotes de 50 itens
+    2. [UPLOAD] Adicionar retry com exponential backoff
+    3. [MONITOR] Adicionar logging de erros de sync
 
-    Sprint 2 - Core Fixes (2 semanas):
-    4. [PERF] Refatorar queries para eliminar N+1
-    5. [LOGIC] Centralizar cálculo MRR em função única
-    6. [CACHE] Implementar invalidação automática via eventos
-    7. [EXPORT] Migrar exports para background jobs
+    Fase 2 - Core Fixes (2 semanas):
+    4. [CONFLICT] Implementar detecção de conflitos básica
+    5. [UPLOAD] Implementar chunked upload com resumable
+    6. [ORDER] Servidor aplicar operações em ordem de client_timestamp
 
-    Sprint 3 - Scale & Monitor (1 semana):
-    8. [PERF] Criar materialized views para dashboards
-    9. [MONITOR] Adicionar APM para detectar slow queries
-    10. [TESTS] Testes de carga para 10k users por empresa
-    11. [DOCS] Documentar arquitetura de cache e jobs
+    Fase 3 - Arquitetura Robusta (3 semanas):
+    7. [CONFLICT] Migrar para CRDTs para auto-merge
+    8. [SYNC] Implementar operation log persistente
 
-  user_prompt: "{bug_report}"
+    === MÉTRICAS DE SUCESSO ===
+    - Perda de dados: 30 casos/semana → 0 casos/semana
+    - Crash rate em sync: 15% → < 1%
+    - NPS: 4.2 → > 7.5
+    - Memória durante sync: 850MB → < 500MB
 
-  # Metadados
-  version: "v2"
-  created_at: "2026-06-11"
+    ─────────────────────────────────────────────
+    RELATO DE BUG A SER ANALISADO
+    ─────────────────────────────────────────────
+
+    {bug_report}
+
+    Gere a User Story completa seguindo os exemplos acima.
+    Lembre-se:
+    - Bullets "- Dado/Quando/Então/E" — nunca blocos indentados
+    - Nomes de seções contextuais (não fixos)
+    - Preserve dados numéricos do relato original
+
+  version: v2
+  created_at: 2026-06-11
   tags:
+    - bug-analysis
+    - user-story
+    - optimized
+    - gherkin
+    - adaptive-output
+  techniques_applied:
     [
-      "bug-analysis",
-      "user-story",
-      "product-management",
-      "optimized",
-      "given-when-then",
+      "Role Prompting",
+      "Few-shot Learning",
+      "Chain of Thought",
+      "Adaptative Output",
     ]
-  techniques_applied: ["few-shot", "cot", "role-prompting"]
