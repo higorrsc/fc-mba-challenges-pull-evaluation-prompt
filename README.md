@@ -334,3 +334,150 @@ python src/evaluate.py
 - **Não altere os datasets de avaliação** - apenas os prompts em `prompts/bug_to_user_story_v2.yml`
 - **Itere, itere, itere** - é normal precisar de 3-5 iterações para atingir 0.8 em todas as métricas
 - **Documente seu processo** - a jornada de otimização é tão importante quanto o resultado final
+
+---
+
+## Pull, Otimização e Avaliação de Prompts com LangChain e LangSmith
+
+Este repositório contém a implementação do desafio de engenharia de prompts para o curso de MBA. O objetivo principal foi interagir com o LangSmith Prompt Hub para fazer o pull de um prompt inicial de baixa qualidade, otimizá-lo aplicando técnicas avançadas de Prompt Engineering e avaliar o seu desempenho de forma automatizada contra um dataset de 15 exemplos de bugs, garantindo que todas as métricas superassem o limite mínimo estipulado de **0.8 (80%)**.
+
+---
+
+## A) Técnicas Aplicadas (Fase 2)
+
+Para refatorar o prompt original (`bug_to_user_story_v1`) e atingir a precisão e formatação exigidas pelos testes, o arquivo `prompts/bug_to_user_story_v2.yml` foi reestruturado utilizando as seguintes técnicas avançadas:
+
+### 1. Few-Shot Learning (Obrigatório)
+
+- **Justificativa:** O avaliador automático do LangSmith (LLM as a Judge) é extremamente rigoroso com a estrutura e o vocabulário da saída. Apenas dar instruções sobre a formatação em Markdown não é suficiente para evitar alucinações. O Few-Shot calibra o modelo mostrando exatamente o padrão ouro.
+
+- **Aplicação Prática:** Foram mapeados e inseridos **5 exemplos de referência calibrados** abrangendo diferentes níveis de complexidade (Simples, Médio e Complexo) e diferentes domínios (Mobile, Segurança, Performance, UI e Infraestrutura).
+  > **Exemplo (Fragmento do prompt):**
+  > *ENTRADA:* "No iOS, ao girar o celular para landscape, o layout da tela de perfil fica quebrado."
+  > *SAÍDA:* "Como um usuário de iOS, eu quero visualizar minha tela de perfil em modo paisagem, para que eu possa usar o app em qualquer orientação sem problemas visuais..."
+
+### 2. Role Prompting
+
+- **Justificativa:** Definir uma persona especializada força o LLM a adotar um contexto técnico focado na qualidade do software, eliminando respostas coloquiais e garantindo a escrita formal exigida em métodos ágeis.
+
+- **Aplicação Prática:** O *System Prompt* define claramente o papel, a experiência e a especialidade da persona:
+  > *"Você é um Engenheiro de QA Sênior com 10 anos de experiência em times ágeis, com profundo domínio em BDD (Behavior-Driven Development) e escrita de User Stories."*
+
+### 3. Chain of Thought (CoT) - Raciocínio Interno
+
+- **Justificativa:** A transformação de um bug em User Story exige análise (identificar a persona impactada, tipo de bug e complexidade). No entanto, se o modelo imprimisse esses passos na resposta final, a métrica de *Precision* despencaria por excesso de texto.
+
+- **Aplicação Prática:** Foi inserido um bloco para o modelo pensar passo a passo de forma invisível antes de gerar a história:
+  > *"RACIOCÍNIO INTERNO (não imprima, apenas processe): 1. Complexidade: simples / médio / complexo? 2. Persona: quem é impactado? ... 4. Há dados numéricos no relato?"*
+
+### 4. Adaptative Output (Formatação Dinâmica)
+
+- **Justificativa:** Bugs simples exigem respostas curtas, enquanto bugs críticos (como falhas de sincronização) exigem métricas e tarefas de mitigação. Forçar o mesmo template para todos prejudicaria a nota.
+
+- **Aplicação Prática:** O prompt contém regras estritas ("REGRAS ABSOLUTAS DE FORMATAÇÃO") que adaptam a profundidade da resposta à complexidade do bug e utilizam nomes de seções contextuais (ex: *Critérios de Segurança*, *Critérios Técnicos*, *Critérios de Acessibilidade*).
+
+## B) Resultados Finais
+
+Após as iterações de ajuste fino no prompt, eliminação de respostas prolixas do modelo e total alinhamento com as diretrizes do Engenheiro de QA Sênior definidas no arquivo `v2`, todas as métricas de avaliação no LangSmith superaram o critério mínimo estipulado de **0.8 (80%)**.
+
+- 🔗 **Link público do Dashboard no LangSmith:** [higorrsc/bug_to_user_story_v2](https://smith.langchain.com/hub/higorrsc/bug_to_user_story_v2)
+
+### Evidências de Aprovação (Screenshots)
+
+1. **Visão Geral do Dataset e Execuções com Sucesso (Notas >= 0.8):**
+![Métricas Aprovadas](assets/2026-06-11%20195407.png)
+
+2. **Rastreamento Detalhado (Tracing) de uma Execução do Prompt v2:**
+![Tracing Detalhado](assets/2026-06-11%20195412.png)
+
+### Tabela Comparativa de Desempenho
+
+| Métrica Base / Derivada | Prompt v1 (Baixa Qualidade) | Prompt v2 (Otimizado) | Status (Mínimo 0.8) |
+| :--- | :---: | :---: | :---: |
+| **Helpfulness** | 0.45 | **> 0.85** | ✅ APROVADO |
+| **Correctness** | 0.52 | **> 0.80** | ✅ APROVADO |
+| **F1-Score** | 0.48 | **> 0.80** | ✅ APROVADO |
+| **Clarity** | 0.50 | **> 0.85** | ✅ APROVADO |
+| **Precision** | 0.46 | **> 0.84** | ✅ APROVADO |
+
+---
+
+## C) Como Executar
+
+### Pré-requisitos e Dependências
+
+- Python 3.9 ou superior instalado no seu sistema.
+- Conta ativa e projeto configurado na plataforma LangSmith.
+- Chave de API da OpenAI (`OPENAI_API_KEY`) ou do Google Gemini (`GEMINI_API_KEY`).
+
+### Instalação e Configuração do Ambiente
+
+**1. Clonar o repositório fork e navegar para a pasta do projeto:**
+
+```text
+git clone https://github.com/higorrsc/fc-mba-challenges-pull-evaluation-prompt.git
+cd fc-mba-challenges-pull-evaluation-prompt
+```
+
+**2. Criar e ativar o ambiente virtual (VirtualEnv):**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate  # No Windows utilize: venv\Scripts\activate
+```
+
+**3. Instalar as dependências obrigatórias:**
+
+```bash
+pip install -r requirements.txt
+```
+
+**4. Configurar as Variáveis de Ambiente:**
+
+Copie o ficheiro de exemplo .env.example para criar o seu ficheiro .env definitivo:
+
+```bash
+cp .env.example .env
+```
+
+De seguida, edite o ficheiro .env e introduza as suas credenciais de acesso:
+
+```text
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
+LANGCHAIN_API_KEY="seu_token_do_langsmith"
+LANGCHAIN_PROJECT="nome_do_seu_projeto"
+OPENAI_API_KEY="sua_chave_da_openai"
+```
+
+### Execução do Projeto por Fases
+
+A execução do ciclo de vida dos prompts é efetuada através dos scripts localizados na diretoria `src/`:
+
+**Fase 1: Descarregar o Prompt Inicial (Pull)**
+Executa o script para obter a versão original de baixa qualidade diretamente do LangSmith Hub para o ambiente local:
+
+```bash
+python src/pull_prompts.py
+```
+
+**Fase 2: Publicar o Prompt Otimizado (Push)**
+Envia a sua versão final e refatorada (`bug_to_user_story_v2.yml`) para o repositório remoto do LangSmith Prompt Hub:
+
+```bash
+python src/push_prompts.py
+```
+
+**Fase 3: Executar a Avaliação Automática**
+Corre o pipeline de avaliação massiva contra as 15 histórias do dataset, calculando as notas através do LLM Judge:
+
+```bash
+python src/evaluate.py
+```
+
+**Fase 4: Validação dos Testes Estruturais**
+Executa os testes automatizados com o `pytest` para certificar que o prompt cumpre todos os requisitos sintáticos e estruturais definidos pelo curso (presença de Few-Shot, System Prompt, definição de papel, etc.):
+
+```bash
+pytest tests/test_prompts.py
+```
